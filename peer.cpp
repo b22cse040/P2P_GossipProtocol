@@ -25,16 +25,49 @@ class PeerNode {
         ofstream logFile;
 
     public:
-        PeerNode(int port) : myPort(port), logFile("peer_network.log", ios::app) {};
+        PeerNode(int port) : myPort(port) {
+            ofstream logFile("peer_network.txt", ios::app);
+            if (!logFile) {
+                cerr << "[ERROR] Failed to open peer_network.txt" << endl;
+                return;
+            }
+            logFile << "[LOG] PeerNode initialized at port " << port << endl;
+            logFile.close();
+        }
+
 
         void logMessage(const string& message){
-            lock_guard<mutex> lock(mtx);
-            logFile << time(0) << " - " << message << '\n';
+            // lock_guard<mutex> lock(mtx);
+            if (!logFile.is_open()) cerr << "Failed to open log file!" << endl;
+
+            // logFile << time(0) << " - " << message << '\n';
+            auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+            logFile << put_time(localtime(&now), "%Y-%m-%d %H:%M:%S") << " - " << message << '\n';
+            logFile.flush();
+
             cout << message << '\n';
         }
 
         void connectToPeer(const string &peerAddress, const string& message = ""){
+            ofstream logFile("peer_network.txt", ios::app);
+            if (!logFile) {
+                cerr << "[ERROR] Failed to open peer_network.txt" << endl;
+                return;
+            }
+
+            logFile << "[LOG] PeerNode connecting to " << peerAddress << endl;
+            logFile.flush();
+            logFile.close();
+
+            cout << "[DEBUG] Trying to connect to: " << peerAddress << endl;
+            
             int peerSocket = socket(AF_INET, SOCK_STREAM, 0);
+            if(peerSocket < 0){
+                logFile << "[ERROR] Failed to create socket!" << '\n';
+                logFile.close();
+                return;
+            }
+
             sockaddr_in peerAddr{};
             peerAddr.sin_family = AF_INET;
             size_t pos = peerAddress.find(":");
@@ -49,6 +82,15 @@ class PeerNode {
                 logMessage("Sent to " + peerAddress + ": " + msg);
                 close(peerSocket);
             }
+
+            else if(connect(peerSocket, (struct sockaddr *)&peerAddr, sizeof(peerAddr) < 0)){
+                logFile << "[ERROR] Connection failed to " << peerAddress << '\n';
+                logFile.close();
+                return;
+            }
+
+            logFile << "[LOG] Successfully connected to " << peerAddress << endl;
+            logFile.close();
         }
 
         void connectToSeeds(){
@@ -124,24 +166,33 @@ class PeerNode {
             }
         }
 
-        void run(){
+        void run() {
             ifstream configFile("config.txt");
+            if (!configFile) {
+                cerr << "[ERROR] Failed to open config.txt" << endl;
+                return;
+            }
+
             string seed;
-            while(getline(configFile, seed)){
-                if(!seed.empty()) seedsAddresses.insert("172.31.74.146" + seed.substr(seed.find(":") + 1));
+            while (getline(configFile, seed)) {
+                if (!seed.empty()) {
+                    cout << "[DEBUG] Read seed address: " << seed << endl;
+                    seedsAddresses.insert(seed);
+                }
             }
             configFile.close();
-
+    
             registerWithKSeeds();
 
             vector<thread> threads;
-            for(int i = 0; i < 3; ++i) threads.emplace_back(&PeerNode::executeJob, this);
+            for (int i = 0; i < 3; ++i) threads.emplace_back(&PeerNode::executeJob, this);
 
-            for(int i = 1; i <= 3; ++i){
+            for (int i = 1; i <= 3; ++i) {
                 jobQueue.push(i);
                 cv.notify_one();
             }
 
-            for(auto &t : threads) t.join();
+            for (auto &t : threads) t.join();
         }
+
 };
