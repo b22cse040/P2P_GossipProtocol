@@ -7,8 +7,6 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-#include <unordered_set>
-#include <queue>
 using namespace std;
 
 class PeerNode {
