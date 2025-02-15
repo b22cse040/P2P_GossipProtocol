@@ -18,11 +18,13 @@ void startPeerNode(int port) {
 int main() {
     vector<thread> nodes;
     string seedIp = "172.31.74.146";
-    // ofstream logFile("peer_network.txt", ios::app);
+    ofstream logFile("peer_network.txt", ios::app);
 
     vector<int> seedPorts = {10000, 10001, 10002};
     for (int port : seedPorts) {
-        cout << "[DEBUG] Launching SeedNode thread for port: " << port << endl;
+        string portMsgTemp = "[DEBUG] Launching SeedNode thread for port: ";
+        logFile << portMsgTemp << port << "\n";
+        cout << portMsgTemp << port << '\n';
         nodes.emplace_back(startSeedNode, seedIp, port);
         this_thread::sleep_for(chrono::milliseconds(500));
     }
@@ -38,7 +40,7 @@ int main() {
     cout << "[DEBUG] Attempting to send message from PeerNode 6000" << endl;
 
     PeerNode sender(6000);
-    sender.connectToPeer("172.31.74.146:6001", "Test Message from 6000");
+    sender.connectToPeer("172.31.74.146", 6000);
 
     for (auto& node : nodes) {
         cout << "[DEBUG] Joining thread" << endl;

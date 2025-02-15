@@ -19,7 +19,13 @@ private:
 
     void log_message(const string& message) {
         // lock_guard<mutex> lock(peers_mutex);
-        if (!logFile.is_open()) cerr << "Failed to open log file!" << endl;
+        // if (!logFile.is_open()) cerr << "Failed to open log file!" << endl;
+        ofstream logFile("peer_network.log", ios::app);
+        if (!logFile) {
+            cerr << "[ERROR] Failed to open peer_network.log" << endl;
+            return;
+        }
+
         logFile << message << '\n';
         cout << message << '\n';
     }

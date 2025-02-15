@@ -38,7 +38,13 @@ class PeerNode {
 
         void logMessage(const string& message){
             // lock_guard<mutex> lock(mtx);
-            if (!logFile.is_open()) cerr << "Failed to open log file!" << endl;
+            // if (!logFile.is_open()) cerr << "Failed to open log file!" << endl;
+
+            ofstream logFile("peer_network.txt", ios::app);
+            if (!logFile) {
+                cerr << "[ERROR] Failed to open peer_network.txt" << endl;
+                return;
+            }
 
             // logFile << time(0) << " - " << message << '\n';
             auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
@@ -48,53 +54,63 @@ class PeerNode {
             cout << message << '\n';
         }
 
-        void connectToPeer(const string &peerAddress, const string& message = ""){
+        void connectToPeer(const string& seedIP, int seedPort) {
+            cout << "[DEBUG] Trying to connect to: " << seedIP << ":" << seedPort << endl;
+
+            // Create a socket
+            int sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (sock < 0) {
+                cerr << "[ERROR] Socket creation failed!" << endl;
+                return;
+            }
+
+            struct sockaddr_in serverAddr;
+            serverAddr.sin_family = AF_INET;
+            serverAddr.sin_port = htons(seedPort);
+            inet_pton(AF_INET, seedIP.c_str(), &serverAddr.sin_addr);
+
+            // Try connecting to the seed node
+            if (connect(sock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+                cerr << "[ERROR] Connection to " << seedIP << ":" << seedPort << " failed!" << endl;
+                close(sock);
+                return;
+            }
+
+            cout << "[DEBUG] Connection to " << seedIP << ":" << seedPort << " was successful." << endl;
+
+            // Open log file in append mode
             ofstream logFile("peer_network.txt", ios::app);
             if (!logFile) {
                 cerr << "[ERROR] Failed to open peer_network.txt" << endl;
+                close(sock);
                 return;
             }
 
-            logFile << "[LOG] PeerNode connecting to " << peerAddress << endl;
-            logFile.flush();
-            logFile.close();
+            logFile << "[LOG] PeerNode connecting to " << seedIP << ":" << seedPort << endl;
+            logFile.flush();  
+            logFile.close();  
 
-            cout << "[DEBUG] Trying to connect to: " << peerAddress << endl;
-            
-            int peerSocket = socket(AF_INET, SOCK_STREAM, 0);
-            if(peerSocket < 0){
-                logFile << "[ERROR] Failed to create socket!" << '\n';
-                logFile.close();
-                return;
-            }
-
-            sockaddr_in peerAddr{};
-            peerAddr.sin_family = AF_INET;
-            size_t pos = peerAddress.find(":");
-            peerAddr.sin_addr.s_addr = inet_addr(peerAddress.substr(0, pos).c_str());
-            peerAddr.sin_port = htons(stoi(peerAddress.substr(pos + 1)));
-
-            if(connect(peerSocket, (struct sockaddr *)&peerAddr, sizeof(peerAddr) == 0)){
-                string msg = (message.empty()) ? "New Connect Request From:" + myIpAddress + ":" + to_string(myPort) : message;
-                send(peerSocket, msg.c_str(), msg.size(), 0);
-                char buffer[1024] = {0};
-                recv(peerSocket, buffer, 1024, 0);
-                logMessage("Sent to " + peerAddress + ": " + msg);
-                close(peerSocket);
-            }
-
-            else if(connect(peerSocket, (struct sockaddr *)&peerAddr, sizeof(peerAddr) < 0)){
-                logFile << "[ERROR] Connection failed to " << peerAddress << '\n';
-                logFile.close();
-                return;
-            }
-
-            logFile << "[LOG] Successfully connected to " << peerAddress << endl;
-            logFile.close();
+            close(sock);  // Close socket after logging
         }
 
         void connectToSeeds(){
-            for(const auto& seed : connectedSeedAddr) connectToPeer(seed);
+            for (const auto& seed : connectedSeedAddr) {
+                string selfAddress = myIpAddress + ":" + to_string(myPort);
+                string seedStr;
+                for (const auto& ch : seed) {
+                    if (!std::isspace(ch)) seedStr += ch;
+                }
+
+                if(seedStr == selfAddress) continue;
+
+                size_t pos = seed.find(":");
+                if (pos != string::npos) {
+                    string ip = seedStr.substr(0, pos);
+                    int port = stoi(seedStr.substr(pos + 1));
+                    cout << "[DEBUG] Connecting to seed: " << seed << '\n';
+                    connectToPeer(ip, port);
+                }
+            }
         }
         
         void peerToPeerConnection(int clientSocket, string addr){
@@ -117,7 +133,12 @@ class PeerNode {
                     if(messageList.find(message) == messageList.end()){
                         messageList.insert(message);
                         for(const auto& peer : connectedPeers){
-                            if(peer != addr) connectToPeer(peer, message);
+                            size_t pos = peer.find(":");
+                            if (pos != string::npos) {
+                                string ip = peer.substr(0, pos);
+                                int port = stoi(peer.substr(pos + 1));
+                                connectToPeer(ip, port);
+                            }
                         }
                     }
                 }
