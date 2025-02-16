@@ -1,0 +1,34 @@
+Seed Connection 6000 10001
+Seed Connection 6001 10000
+Seed Connection 6002 10002
+Seed Connection 6003 10001
+Seed Connection 6004 10000
+Seed Connection 6005 10001
+Seed 10000
+Seed 10001
+Seed 10002
+Peer 6000
+Connection 6000 -> 6004
+Connection 6000 -> 6002
+Connection 6000 -> 6001
+Peer 6001
+Connection 6001 -> 6004
+Connection 6001 -> 6002
+Connection 6001 -> 6003
+Peer 6002
+Connection 6002 -> 6004
+Connection 6002 -> 6003
+Connection 6002 -> 6001
+Peer 6003
+Connection 6003 -> 6002
+Connection 6003 -> 6000
+Connection 6003 -> 6004
+Peer 6004
+Connection 6004 -> 6003
+Connection 6004 -> 6000
+Connection 6004 -> 6002
+Peer 6005
+Connection 6005 -> 6004
+Connection 6005 -> 6002
+Connection 6005 -> 6000
+[DEAD] Peer 6002

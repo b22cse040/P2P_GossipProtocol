@@ -1,24 +1,28 @@
-[LOG] PeerNode initialized at port 6000
-[LOG] PeerNode initialized at port 6001
-[LOG] PeerNode initialized at port 6002
-[LOG] PeerNode initialized at port 6003
-[LOG] PeerNode initialized at port 6004
-[LOG] PeerNode initialized at port 6005
-[LOG] PeerNode initialized at port 6000
-[LOG] PeerNode initialized at port 6001
-[LOG] PeerNode initialized at port 6002
-[LOG] PeerNode initialized at port 6003
-[LOG] PeerNode initialized at port 6004
-[LOG] PeerNode initialized at port 6005
-[LOG] PeerNode initialized at port 6000
-[LOG] PeerNode initialized at port 6001
-[LOG] PeerNode initialized at port 6002
-[LOG] PeerNode initialized at port 6003
-[LOG] PeerNode initialized at port 6004
-[LOG] PeerNode initialized at port 6005
-[LOG] PeerNode initialized at port 6000
-[LOG] PeerNode initialized at port 6001
-[LOG] PeerNode initialized at port 6002
-[LOG] PeerNode initialized at port 6003
-[LOG] PeerNode initialized at port 6004
-[LOG] PeerNode initialized at port 6005
+Seed node running on 127.0.0.1:10000
+Seed node running on 127.0.0.1:10001
+Seed node running on 127.0.0.1:10002
+Peer node started on port 6000
+Peer 6000 added extra connection to 6004
+Peer 6000 added extra connection to 6002
+Peer 6000 added extra connection to 6001
+Peer node started on port 6001
+Peer 6001 added extra connection to 6004
+Peer 6001 added extra connection to 6002
+Peer 6001 added extra connection to 6003
+Peer node started on port 6002
+Peer 6002 added extra connection to 6004
+Peer 6002 added extra connection to 6003
+Peer 6002 added extra connection to 6001
+Peer node started on port 6003
+Peer 6003 added extra connection to 6002
+Peer 6003 added extra connection to 6000
+Peer 6003 added extra connection to 6004
+Peer node started on port 6004
+Peer 6004 added extra connection to 6003
+Peer 6004 added extra connection to 6000
+Peer 6004 added extra connection to 6002
+Peer node started on port 6005
+Peer 6005 added extra connection to 6004
+Peer 6005 added extra connection to 6002
+Peer 6005 added extra connection to 6000
+[DEAD] Peer 6002 has failed.
