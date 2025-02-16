@@ -18,7 +18,7 @@ class PeerNode {
         vector<string> connectedPeers;
         vector<string> connectedSeedAddr;
         unordered_set<string> messageList;
-        string myIpAddress = "172.31.74.146";
+        string myIpAddress = "172.31.69.51";
         int myPort;
         ofstream logFile;
 

@@ -9,7 +9,8 @@
 
 using namespace std;
 
-class SeedNode {
+class SeedNode
+{
 private:
     string seed_ip;
     int port;
@@ -17,11 +18,13 @@ private:
     mutex peers_mutex;
     ofstream logFile;
 
-    void log_message(const string& message) {
+    void log_message(const string &message)
+    {
         // lock_guard<mutex> lock(peers_mutex);
         // if (!logFile.is_open()) cerr << "Failed to open log file!" << endl;
         ofstream logFile("peer_network.log", ios::app);
-        if (!logFile) {
+        if (!logFile)
+        {
             cerr << "[ERROR] Failed to open peer_network.log" << endl;
             return;
         }
@@ -29,28 +32,66 @@ private:
         logFile << message << '\n';
         cout << message << '\n';
     }
+    vector<string> get_power_law_peers()
+    {
+        vector<string> subset;
+        if (peers.empty())
+            return subset;
 
-    void manage_connection(int client_socket, string client_ip) {
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_int_distribution<> dist(1, peers.size());
+
+        int count = max(1, dist(gen) / 2); // Power-law approximation
+        shuffle(peers.begin(), peers.end(), gen);
+
+        for (int i = 0; i < count; ++i)
+        {
+            subset.push_back(peers[i]);
+        }
+        return subset;
+    }
+    void remove_dead_peer(const string &dead_peer)
+    {
+        lock_guard<mutex> lock(peers_mutex);
+        peers.erase(remove(peers.begin(), peers.end(), dead_peer), peers.end());
+        log_message("Removed Dead Peer: " + dead_peer);
+    }
+
+    void manage_connection(int client_socket, string client_ip)
+    {
         char buffer[1024] = {0};
-        while (true) {
+        while (true)
+        {
             int bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-            if (bytes_received <= 0) break;
+            if (bytes_received <= 0)
+                break;
 
             buffer[bytes_received] = '\0';
             string data(buffer);
 
             lock_guard<mutex> lock(peers_mutex);
-            if (!data.rfind("Dead Node", 0)) log_message(data);
-            else {
+            if (!data.rfind("Dead Node", 0))
+            {
+                log_message(data);
+                remove_dead_peer(data.substr(10)); // Extract IP:Port
+            }
+
+            else
+            {
                 size_t pos = data.find(":");
-                if (pos != string::npos) {
+                if (pos != string::npos)
+                {
                     string new_peer = client_ip + ":" + data.substr(pos + 1);
                     peers.push_back(new_peer);
                     new_peer = "Connected to " + new_peer;
                     log_message(new_peer);
 
                     string peer_list;
-                    for (const auto& peer : peers) peer_list += peer + ",";
+                    vector<string> selected_peers = get_power_law_peers();
+                    for (const auto &peer : selected_peers)
+                        peer_list += peer + ",";
+
                     send(client_socket, peer_list.c_str(), peer_list.length(), 0);
                 }
             }
@@ -61,18 +102,21 @@ private:
 public:
     SeedNode(string ip, int p) : seed_ip(move(ip)), port(p), logFile("peer_network.log", ios::app) {}
 
-    void run() {
+    void run()
+    {
         ofstream logFile("peer_network.txt", ios::app);
-        if(!logFile){
+        if (!logFile)
+        {
             cerr << "[ERROR] Failed to open peer_network.txt" << '\n';
             return;
         }
 
         logFile << "[LOG] SeedNode is running on " << seed_ip << ":" << port << "\n";
         logFile.close();
-        
+
         int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (server_socket < 0) {
+        if (server_socket < 0)
+        {
             cerr << "Socket creation failed!" << endl;
             return;
         }
@@ -82,22 +126,26 @@ public:
         server_addr.sin_port = htons(port);
         inet_pton(AF_INET, seed_ip.c_str(), &server_addr.sin_addr);
 
-        if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
+        {
             cerr << "Binding Failed" << '\n';
             return;
         }
 
-        if (listen(server_socket, 5) == -1) {
+        if (listen(server_socket, 5) == -1)
+        {
             cerr << "Listening Failed!" << '\n';
             return;
         }
 
         cout << "Seed Node listening on " << seed_ip << ":" << port << "\n";
-        while (true) {
+        while (true)
+        {
             sockaddr_in client_addr;
             socklen_t client_len = sizeof(client_addr);
-            int client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
-            if (client_socket == -1) {
+            int client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &client_len);
+            if (client_socket == -1)
+            {
                 cerr << "Failed to accept connection!" << '\n';
                 continue;
             }

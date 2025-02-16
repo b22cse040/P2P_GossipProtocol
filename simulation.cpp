@@ -17,7 +17,7 @@ void startPeerNode(int port) {
 
 int main() {
     vector<thread> nodes;
-    string seedIp = "172.31.74.146";
+    string seedIp = "172.31.69.51";
     ofstream logFile("peer_network.txt", ios::app);
 
     vector<int> seedPorts = {10000, 10001, 10002};
